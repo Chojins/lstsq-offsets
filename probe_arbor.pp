@@ -53,39 +53,48 @@ sub init_local_var
 	NoTouch 		= 0		{ flag to record if a touch is missed } 		 \
 
     {define the nominal bar gripper tool frame}
-	tg_prof_write(BarToolDef, 0.0, 0.0, -73.0, 0.0, 0.0, 0.0, 0)    {spindle_ref_posn}
+	default_spindle_ref_posn = unitcv(-73.0)    {TODO:read this offset default for each machine type}
+	tg_prof_write(BarToolDef, 0.0, 0.0, default_spindle_ref_posn, 0.0, 0.0, 0.0, 0)
 
     {base transform is all zero because we are measuring the machine}
 	tg_prof_write(BaseTransform, -1.0, 0.0, 0.0, 0.0,   0.0, 0.0, 1.0, 0.0,   0.0, 1.0, 0.0, 0.0, 0)
 
+	{probe and arbor parameters}
+	probe_ball_dia = unitcv(12.7)	{TODO: user input}
+	arbor_dia = unitcv(20)			{TODO: user input}
+	standoff_dist = unitcv(15)		{distance to retract from bar surface}
+	slow_probe_dist = unitcv(2)		{distance of slow feed probe move}
+
+	probe_distance = standoff_dist + (probe_ball_dia + arbor_dia)/2
+
 	{generate probe points for bar}
-	tg_prof_write(pBarPoints,	-19.445	,	-19.445	,	90	,	0	)
+	tg_prof_write(pBarPoints,	-probe_distance*cos(90)	,	-probe_distance*sin(90)	,	90	,	0	)
 	tg_prof_write(pBarPoints,	0	,	0	,	90	,	1	)
-	tg_prof_write(pBarPoints,	-26.563	,	-7.118	,	90	,	2	)
+	tg_prof_write(pBarPoints,	-probe_distance*cos(45)	,	-probe_distance*sin(45)	,	90	,	2	)
 	tg_prof_write(pBarPoints,	0	,	0	,	90	,	3	)
-	tg_prof_write(pBarPoints,	-26.563	,	7.118	,	90	,	4	)
+	tg_prof_write(pBarPoints,	-probe_distance*cos(45)	,	probe_distance*sin(45)	,	90	,	4	)
 	tg_prof_write(pBarPoints,	0	,	0	,	90	,	5	)
-	tg_prof_write(pBarPoints,	-19.445	,	19.445	,	90	,	6	)
+	tg_prof_write(pBarPoints,	-probe_distance*cos(90)	,	probe_distance*sin(90)	,	90	,	6	)
 	tg_prof_write(pBarPoints,	0	,	0	,	90	,	7	)
     
 
-	tg_prof_write(pBarPoints,	-19.445	,	19.445	,	75	,	8	)
+	tg_prof_write(pBarPoints,	-probe_distance*cos(90)	,	probe_distance*sin(90)	,	75	,	8	)
 	tg_prof_write(pBarPoints,	0	,	0	,	75	,	9	)
-    tg_prof_write(pBarPoints,	-26.563	,	7.118	,	75	,	10	)
+    tg_prof_write(pBarPoints,	-probe_distance*cos(45)	,	probe_distance*sin(45)	,	75	,	10	)
 	tg_prof_write(pBarPoints,	0	,	0	,	75	,	11	)
-    tg_prof_write(pBarPoints,	-26.563	,	-7.118	,	75	,	12	)
+    tg_prof_write(pBarPoints,	-probe_distance*cos(45)	,	-probe_distance*sin(45)	,	75	,	12	)
 	tg_prof_write(pBarPoints,	0	,	0	,	75	,	13	)
-	tg_prof_write(pBarPoints,	-19.445	,	-19.445	,	75	,	14	)    
+	tg_prof_write(pBarPoints,	-probe_distance*cos(90)	,	-probe_distance*sin(90)	,	75	,	14	)    
 	tg_prof_write(pBarPoints,	0	,	0	,	75	,	15	)
 
     
-	tg_prof_write(pBarPoints,	-19.445	,	-19.445	,	60	,	16	)    
+	tg_prof_write(pBarPoints,	-probe_distance*cos(90)	,	-probe_distance*sin(90)	,	60	,	16	)    
 	tg_prof_write(pBarPoints,	0	,	0	,	60	,	17	)
-	tg_prof_write(pBarPoints,	-26.563	,	-7.118	,	60	,	18	)
+	tg_prof_write(pBarPoints,	-probe_distance*cos(45)	,	-probe_distance*sin(45)	,	60	,	18	)
 	tg_prof_write(pBarPoints,	0	,	0	,	60	,	19	)
-	tg_prof_write(pBarPoints,	-26.563	,	7.118	,	60	,	20	)
+	tg_prof_write(pBarPoints,	-probe_distance*cos(45)	,	probe_distance*sin(45)	,	60	,	20	)
 	tg_prof_write(pBarPoints,	0	,	0	,	60	,	21	)
-	tg_prof_write(pBarPoints,	-19.445	,	19.445	,	60	,	22	)
+	tg_prof_write(pBarPoints,	-probe_distance*cos(90)	,	probe_distance*sin(90)	,	60	,	22	)
 	tg_prof_write(pBarPoints,	0	,	0	,	60	,	23	)
 		
 	{ define known axis center points in arbor frame for guess}
@@ -165,7 +174,7 @@ sub probe_bar_auto
 
 	workpiece   		{ clear all existing workpiece offsets }
 	posnlatch   		{ obtain current the position of the effector point }
-	workpiece x(unitcv(G_POSN_UF0) - (X_EOT - unitcv(6.35)))  { move workpiece coord to center of 1/2" sphere }
+	workpiece x(unitcv(G_POSN_UF0) - (x_eot - (probe_ball_dia/2) + (arbor_dia/2)))  { move workpiece coord to center of probe ball }
 
 	posnlatch
 	x_start = unitcv(g_posn_uf0) \
@@ -204,6 +213,12 @@ sub probe_bar_auto
 
 		probe_reenable() 
 		F(probing_frate)	{ set feedrate }
+
+		{find the length of the vector}
+		vec_length = sqrt((TarX - AppX)*(TarX - AppX) + (TarY - AppY)*(TarY - AppY) + (TarZ - AppZ)*(TarZ - AppZ)) \
+
+		{fraction of vector to move in rapid}
+		RapApproach = (vec_length - ((probe_ball_dia + arbor_dia)/2) - slow_probe_dist)/vec_length \
 
 		{ define a vector from approach to target }
 		AppVecX = RapApproach * (TarX - AppX) \
@@ -252,6 +267,87 @@ sub probe_bar_auto
 	workpiece
 subend { probe_bar_auto }
 
+{********************************************************
+* Subroutine  :	dig_end_ball
+* Description :	probe the sphere in the headstock 
+*********************************************************}
+sub dig_end_ball
+
+	calls "move_headstock_to_arbor_mpg"
+
+	select_active_probe(2) { TODO: check this is the wheel probe}
+
+	probing_begin()
+	
+	linear
+	f(probing_frate)	{ set feedrate }
+		X(unitcv(-100.0)) stopifnot xolb555	{ Move to some negative position }
+
+	probelatch
+	sync
+	waitplc(1)
+	if xolb555 	calls  "missed_chuck"		{ did not touch the tool }
+
+	relative
+	rapid
+		x(x_retract)       { relative instead of absolute to avoid
+							probe breakage when probe is not reliable }
+	absolute
+
+	x_eot = unitcv(G_PROBED_UF0) 
+
+	sync
+	waitplc(1)
+	probing_end()
+
+	OPEN ( &outdata, logfile, APPEND ) 
+	WRITE ( outdata, "x_eot_uf = %f, x_eot_jf = %f \n", unitcv(G_PROBED_UF0), unitcv(G_PROBED_JF0))
+	close (outdata)
+
+subend { dig_end_ball }
+
+{*******************************************************************
+* Subroutine :  M I S S E D _ C H U C K
+* Description : Aborts the cycle because the probe misses the 
+*				with ball when xolb555=on 
+********************************************************************}
+sub missed_chuck
+
+	probing_end()
+	ep_warning	("probing move missed")
+	m86 { for rx7 to cancel m89 preset of C offset }
+	end
+
+subend { missed_chuck }
+
+{ *************************************************************************
+* Subroutine  : move_headstock_to_arbor_mpg
+* Description : Allow MPG to a position, return when ack is pressed
+*************************************************************************** }
+sub move_headstock_to_arbor_mpg
+
+	absolute
+	callp cyc_path+"/tg_dis_axis"
+
+	%XILB_SELECT_X_AXIS = on
+ 	callp cyc_path+"/tg_en_mpg"
+	n100 if %GPB_ACK_LATCH goto n999
+	
+	wclose
+	write("jog probe in X to 5mm from arbor")
+	write("press ACK to probe")
+	
+	%GPB_EXTERNAL_MPG_ACTIVATED = on
+ 	callp cyc_path+"/tg_en_mpg"
+ 	if %XILB_SELECT_X_AXIS callp cyc_path+"/tg_x_mpg"
+  	if %XILB_SELECT_Y_AXIS callp cyc_path+"/tg_y_mpg"
+  	if %XILB_SELECT_Z_AXIS callp cyc_path+"/tg_z_mpg"
+	goto n100
+n999 
+	wclose
+	%GPB_EXTERNAL_MPG_ACTIVATED = off
+
+subend { move_headstock_to_arbor_mpg }
 
 {************************
 *** M A I N   B O D Y ***
@@ -277,13 +373,14 @@ close (outdata)
 X(mx_home_preset)
 C(0)
 
-callp teach_home+"/rbt_com_auto_dig_end_ball.pp"
-X_EOT = g_fv316
+{jog probe tip to arbor in X}
+calls "dig_end_ball"
 
 workpiece 	{ clear any workpiece offsets }
 m86 		{ column centre }
 
 X(mx_home_preset)
+Y(0) Z(0)
 
 c_angle = 0.0
 a_angle = 0.0
