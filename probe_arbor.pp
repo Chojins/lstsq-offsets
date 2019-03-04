@@ -60,8 +60,8 @@ sub init_local_var
 	tg_prof_write(BaseTransform, -1.0, 0.0, 0.0, 0.0,   0.0, 0.0, 1.0, 0.0,   0.0, 1.0, 0.0, 0.0, 0)
 
 	{probe and arbor parameters}
-	probe_ball_dia = unitcv(12.7)	{TODO: user input}
-	arbor_dia = unitcv(20)			{TODO: user input}
+	probe_ball_dia = unitcv(2.0)	{TODO: user input}
+	arbor_dia = unitcv(31.8)			{TODO: user input}
 	standoff_dist = unitcv(15)		{distance to retract from bar surface}
 	slow_probe_dist = unitcv(2)		{distance of slow feed probe move}
 
@@ -101,6 +101,8 @@ sub init_local_var
 	tg_prof_write(pBarAxisNom, 0, 0, 0, 0)	
 	tg_prof_write(pBarAxisNom, 0, 0, 100, 1) 
 	tg_prof_write(pBarAxisNom, 0, 0, 115, 2)	
+    
+    x_retract = unitcv(50.0)
 
 subend	{ init_local_var }
 
@@ -174,14 +176,14 @@ sub probe_bar_auto
 
 	workpiece   		{ clear all existing workpiece offsets }
 	posnlatch   		{ obtain current the position of the effector point }
-	workpiece x(unitcv(G_POSN_UF0) - (x_eot - (probe_ball_dia/2) + (arbor_dia/2)))  { move workpiece coord to center of probe ball }
+	workpiece x(unitcv(G_POSN_UF0) - (x_eot - (probe_ball_dia/2) - (arbor_dia/2)))  { move workpiece coord to center of probe ball }
 
 	posnlatch
 	x_start = unitcv(g_posn_uf0) \
 	y_start = unitcv(g_posn_uf1) \
 	z_start = unitcv(g_posn_uf2)
 	
-	select_active_probe(4)
+	select_active_probe(3)
 	
 	{ Initialize the machine for probing }
 	PROBING_BEGIN()		
@@ -212,8 +214,7 @@ sub probe_bar_auto
 		AppPoint = AppPoint + 1
 
 		probe_reenable() 
-		F(probing_frate)	{ set feedrate }
-
+		
 		{find the length of the vector}
 		vec_length = sqrt((TarX - AppX)*(TarX - AppX) + (TarY - AppY)*(TarY - AppY) + (TarZ - AppZ)*(TarZ - AppZ)) \
 
@@ -237,6 +238,8 @@ sub probe_bar_auto
 		IF (XOLB555 = FALSE) then
 			X(AppX) Y(AppY) Z(AppZ) { retract to the start if contact is made on the rapid }
 		IFEND
+        
+        F(probing_frate)	{ set feedrate }
 
 		linear 
 			X(TarX) Y(TarY) Z(TarZ) STOPIFNOT XOLB555	{ move forward to contact point }
@@ -275,7 +278,7 @@ sub dig_end_ball
 
 	calls "move_headstock_to_arbor_mpg"
 
-	select_active_probe(2) { TODO: check this is the wheel probe}
+	select_active_probe(3) { TODO: check this is the wheel probe}
 
 	probing_begin()
 	
@@ -385,7 +388,7 @@ Y(0) Z(0)
 c_angle = 0.0
 a_angle = 0.0
 
-for c_angle = 0.0 TO -60.0 STEP -30.0 DO
+for c_angle = 0.0 TO -30.0 STEP -10.0 DO
     C(c_angle) A(a_angle)   {move the axes to measurement position}
     tg_prof_write(ArborPose, 0.0, 0.0, 0.0, 0.0, c_angle, 0.0, 0)
     calls "measure_bar_tool"
@@ -393,7 +396,7 @@ for c_angle = 0.0 TO -60.0 STEP -30.0 DO
     a_angle = a_angle + 15
 FOREND
 
-for c_angle = -120.0 TO -180 STEP -30.0 DO
+for c_angle = -150.0 TO -180 STEP -10.0 DO
     C(c_angle) A(a_angle)   {move the axes to measurement position}
     tg_prof_write(ArborPose, 0.0, 0.0, 0.0, 0.0, -c_angle, 180.0, 0)
     calls "measure_bar_tool"
