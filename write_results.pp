@@ -86,23 +86,25 @@ subend { wait_for_ack }
 {************************
 *** M A I N   B O D Y ***
 *************************}
+calls "init_local_var"
+
 calls "reset_ack_latch"
 wclose
 write("Review the changes below: \n")
-write("\tCurrent Value\t|\tChange\t|\tNew Value\n")
-write("spindle_centerline_offset\t:\t" + spindle_centerline_offset_current + "\t|\t" + (spindle_centerline_offset_current - spindle_centerline_offset) + "\t|\t" + spindle_centerline_offset + "\n")
-write("y_home_offset\t:\t" + y_home_offset_current + "\t|\t" + y_home_offset_change + "\t|\t" + (y_home_offset_current + y_home_offset) + "\n")
-write("z_home_offset\t:\t" + z_home_offset_current + "\t|\t" + z_home_offset_change + "\t|\t" + (z_home_offset_current + z_home_offset) + "\n")
-write("c_home_offset\t:\t" + c_home_offset_current + "\t|\t" + c_home_offset_change + "\t|\t" + (c_home_offset_current + c_home_offset) + "\t(deg)\n")
-write("\nPress <ACK> to save the new offset data")
+write("\t\t\t\tCurrent\t\tChange\t\tNew Value\n")
+write("spindle_cntr_line_off\t:\t%.3f\t\t%.3f\t\t%.3f\n",spindle_centerline_offset_current, (spindle_centerline_offset_current - spindle_centerline_offset), spindle_centerline_offset)
+write("y_home_offset\t\t:\t%.3f\t\t%.3f\t\t%.3f\n",y_home_offset_current, y_home_offset_change, (y_home_offset_current + y_home_offset_change))
+write("z_home_offset\t\t:\t%.3f\t\t%.3f\t\t%.3f\n", z_home_offset_current, z_home_offset_change, (z_home_offset_current + z_home_offset_change))
+write("c_home_offset\t\t:\t%.3f\t\t%.3f\t\t%.3f\t(deg)\n", c_home_offset_current, c_home_offset_change, (c_home_offset_current + c_home_offset_change))
+write("\n\nPress <ACK> to save the new offset data")
 calls "wait_for_ack"
 wclose
 
 {save the data to p_user}
 dba_put_float_parm(DBA_USER, "spindle_cntr_line_off", spindle_centerline_offset / unitcv(1.0))
-dba_put_float_parm(DBA_USER, "2.home_position", (y_home_offset_current + y_home_offset) / unitcv(1.0))
-dba_put_float_parm(DBA_USER, "3.home_position", (z_home_offset_current + z_home_offset) / unitcv(1.0))
-dba_put_float_parm(DBA_USER, "5.home_position", (c_home_offset_current + c_home_offset) / unitcv(1.0))
+dba_put_float_parm(DBA_USER, "2.home_position", (y_home_offset_current + y_home_offset_change) / unitcv(1.0))
+dba_put_float_parm(DBA_USER, "3.home_position", (z_home_offset_current + z_home_offset_change) / unitcv(1.0))
+dba_put_float_parm(DBA_USER, "5.home_position", (c_home_offset_current + c_home_offset_change) / unitcv(1.0))
 
 return
 

@@ -63,7 +63,7 @@ sub init_local_var
 	probe_ball_dia = unitcv(2.0)	{TODO: user input}
 	arbor_dia = unitcv(31.8)			{TODO: user input}
 	standoff_dist = unitcv(15)		{distance to retract from bar surface}
-	slow_probe_dist = unitcv(2)		{distance of slow feed probe move}
+	slow_probe_dist = unitcv(3)		{distance of slow feed probe move}
 
 	probe_distance = standoff_dist + (probe_ball_dia + arbor_dia)/2
 
@@ -162,8 +162,7 @@ sub measure_bar_tool
 	AppPoint    = 0 { index for probe point matrix }
     
 	{ probe the bar}
-	RapApproach = 0.3	{TODO: tweak this to be quicker}
-	CALLS "probe_bar_auto"
+	calls "probe_bar_auto"
 	
 subend { measure_bar_tool }	
 
@@ -259,7 +258,7 @@ sub probe_bar_auto
 		
         {record the probe contact point to the data file}
         OPEN ( &outdata, datafile, APPEND ) 
-        WRITE ( outdata, "%f	%f 	%f	%f 	%f \n", G_PROBED_UF[0], G_PROBED_UF[1], zInv, a_angle, c_angle)
+        WRITE ( outdata, "%f	%f 	%f	%f 	%f \n", G_PROBED_UF[0], G_PROBED_UF[1], zInv, G_PROBED_UF[3], G_PROBED_UF[4])
 		
 		conRow = conRow + 1
 		GOTO N25 { go around again }
@@ -278,7 +277,7 @@ sub dig_end_ball
 
 	calls "move_headstock_to_arbor_mpg"
 
-	select_active_probe(3) { TODO: check this is the wheel probe}
+	select_active_probe(3) { 3 is the wheel probe input}
 
 	probing_begin()
 	
@@ -337,8 +336,7 @@ sub move_headstock_to_arbor_mpg
 	n100 if %GPB_ACK_LATCH goto n999
 	
 	wclose
-	write("jog probe in X to 5mm from arbor")
-	write("press ACK to probe")
+	write("Jog probe in X to 5mm from arbor.\n\nPress <ACK> to probe.")
 	
 	%GPB_EXTERNAL_MPG_ACTIVATED = on
  	callp cyc_path+"/tg_en_mpg"
@@ -375,6 +373,7 @@ close (outdata)
     
 X(mx_home_preset)
 C(0)
+Y(0) Z(0)
 
 {jog probe tip to arbor in X}
 calls "dig_end_ball"
@@ -388,21 +387,21 @@ Y(0) Z(0)
 c_angle = 0.0
 a_angle = 0.0
 
-for c_angle = 0.0 TO -30.0 STEP -10.0 DO
+for c_angle = 0.0 to -30.0 step -10.0 do
     C(c_angle) A(a_angle)   {move the axes to measurement position}
     tg_prof_write(ArborPose, 0.0, 0.0, 0.0, 0.0, c_angle, 0.0, 0)
     calls "measure_bar_tool"
     X(mx_home_preset)
-    a_angle = a_angle + 15
-FOREND
+    a_angle = a_angle + 25
+forend
 
-for c_angle = -150.0 TO -180 STEP -10.0 DO
+for c_angle = -150.0 to -180 step -10.0 do
     C(c_angle) A(a_angle)   {move the axes to measurement position}
     tg_prof_write(ArborPose, 0.0, 0.0, 0.0, 0.0, -c_angle, 180.0, 0)
     calls "measure_bar_tool"
     X(mx_home_preset)
-    a_angle = a_angle + 15
-FOREND
+    a_angle = a_angle + 25
+forend
 
 return
 
