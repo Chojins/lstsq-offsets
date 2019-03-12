@@ -33,6 +33,9 @@ sub init_local_var
 	dmy = dba_get_float_parm(&mz_home_preset, "3.home_position", "Joint.Hpp") \	
 	mz_home_preset = unitcv(mz_home_preset) \
 
+	{ grinder c home position }	
+	dmy = dba_get_float_parm(&mc_home_preset, "5.home_position", "Joint.Hpp")
+
 
 	{ steady type }
 	dmy = dba_get_int_parm(&steady_type, "steady_type", "Parm") \
@@ -258,7 +261,7 @@ sub probe_bar_auto
 		
         {record the probe contact point to the data file}
         OPEN ( &outdata, datafile, APPEND ) 
-        WRITE ( outdata, "%f	%f 	%f	%f 	%f \n", G_PROBED_UF[0], G_PROBED_UF[1], zInv, G_PROBED_UF[3], G_PROBED_UF[4])
+        WRITE ( outdata, "%f	%f 	%f	%f 	%f \n", G_PROBED_UF[0] - mx_home_preset, G_PROBED_UF[1] - my_home_preset, zInv - mz_home_preset, G_PROBED_UF[9], G_PROBED_UF[11] - mc_home_preset)
 		
 		conRow = conRow + 1
 		GOTO N25 { go around again }
