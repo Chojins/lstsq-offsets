@@ -150,17 +150,10 @@ subend { wait_for_ack }
 * Description :	probe the arbor
 *********************************************************}
 sub measure_bar_tool
-	gbif("writePDToFile", ArborPose, 1, 6, logfile, "ArborPose",1,1)
-	gbif("writePDToFile", BarToolDef, 1, 6, logfile, "BarToolDef",1,1)
-	gbif("writePDToFile", BaseTransform, 1, 12, logfile, "BaseTransform",1,1)	
     
 	{ generate a set of approach points for the current pose }
 	gbif_result = gbif("probe_point_gen", ArborPose, BarToolDef, BaseTransform, pBarPoints,\
 					   pBarAxisNom, wBarAxisNom, wBarPoints, approachThetas) 
-					   
-	gbif("writePDToFile", approachThetas, 1, 3, logfile, "approachThetas",1,1)
-	gbif("writePDToFile", wBarPoints, 24, 3, logfile, "wBarPoints",1,1)
-	gbif("writePDToFile", wBarAxisNom, 3, 3, logfile, "wBarAxisNom",1,1)	
     
 	AppPoint    = 0 { index for probe point matrix }
     

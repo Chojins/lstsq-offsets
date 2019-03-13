@@ -41,8 +41,11 @@ sub init_local_var
 
     {log Result }
     OPEN ( &outdata, logfile, APPEND ) 
-    WRITE ( outdata, "\n| spindle_centerline_offset_current | y_home_offset_current | z_home_offset_current | c_home_offset_current |\n")
-    WRITE ( outdata, "%f %f %f %f \n",spindle_centerline_offset_current, y_home_offset_current, z_home_offset_current, c_home_offset_current)
+    write(outdata, "\t\t\t\t\t\tCurrent\t\tNew Value\tChange\n")
+    write(outdata, "spindle_cntr_line_off\t:\t%.3f\t\t%.3f\t\t%.3f\n",spindle_centerline_offset_current, spindle_centerline_offset, (spindle_centerline_offset_current - spindle_centerline_offset))
+    write(outdata, "y_home_offset\t\t\t:\t%.3f\t\t%.3f\t\t%.3f\n",y_home_offset_current, y_home_offset, (y_home_offset_current - y_home_offset))
+    write(outdata, "z_home_offset\t\t\t:\t%.3f\t\t%.3f\t\t%.3f\n", z_home_offset_current, z_home_offset, (z_home_offset_current - z_home_offset))
+    write(outdata, "c_home_offset\t\t\t:\t%.3f\t\t%.3f\t\t%.3f\t(deg)\n", c_home_offset_current, c_home_offset, (c_home_offset_current - c_home_offset))
     close (outdata)
 
 subend	{ init_local_var }
@@ -88,14 +91,16 @@ subend { wait_for_ack }
 *************************}
 calls "init_local_var"
 
+
+    
 calls "reset_ack_latch"
 wclose
 write("Review the changes below: \n")
-write("\t\t\t\tCurrent\t\tChange\t\tNew Value\n")
-write("spindle_cntr_line_off\t:\t%.3f\t\t%.3f\t\t%.3f\n",spindle_centerline_offset_current, (spindle_centerline_offset_current - spindle_centerline_offset), spindle_centerline_offset)
-write("y_home_offset\t\t:\t%.3f\t\t%.3f\t\t%.3f\n",y_home_offset_current, (y_home_offset_current - y_home_offset), y_home_offset)
-write("z_home_offset\t\t:\t%.3f\t\t%.3f\t\t%.3f\n", z_home_offset_current, (z_home_offset_current - z_home_offset), z_home_offset)
-write("c_home_offset\t\t:\t%.3f\t\t%.3f\t\t%.3f\t(deg)\n", c_home_offset_current, (c_home_offset_current - c_home_offset), c_home_offset)
+write("\t\t\t\tCurrent\t\tNew Value\tChange\n")
+write("spindle_cntr_line_off\t:\t%.3f\t\t%.3f\t\t%.3f\n",spindle_centerline_offset_current, spindle_centerline_offset, (spindle_centerline_offset_current - spindle_centerline_offset))
+write("y_home_offset\t\t:\t%.3f\t\t%.3f\t\t%.3f\n",y_home_offset_current, y_home_offset, (y_home_offset_current - y_home_offset))
+write("z_home_offset\t\t:\t%.3f\t\t%.3f\t\t%.3f\n", z_home_offset_current, z_home_offset, (z_home_offset_current - z_home_offset))
+write("c_home_offset\t\t:\t%.3f\t\t%.3f\t\t%.3f\t(deg)\n", c_home_offset_current, c_home_offset, (c_home_offset_current - c_home_offset))
 write("\n\nPress <ACK> to save the new offset data")
 calls "wait_for_ack"
 wclose
