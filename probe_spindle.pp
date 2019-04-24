@@ -63,12 +63,12 @@ sub init_local_var
 	tg_prof_write(base_transform_prof, -1.0, 0.0, 0.0, 0.0,   0.0, 0.0, 1.0, 0.0,   0.0, 1.0, 0.0, 0.0, 0)
 
 	{probe and arbor parameters}
-	probe_ball_dia = unitcv(2.0)	{TODO: user input}
+	probe_ball_dia = unitcv(1.0)	{TODO: user input ; reduced rad to ensure contact}
 
 	standoff_dist = unitcv(15)		{distance to retract from bar surface}
 	slow_probe_dist = unitcv(3)		{distance of slow feed probe move}
  
-	spindle_face_rad = 30.0
+	spindle_face_rad = 16.25
 	a_axis_step = 25.0 {degrees}
 
 	{generate probe points for probing spindle front face}
@@ -107,6 +107,17 @@ sub init_local_var
 	tg_prof_write(spindle_axis_prof, 0, 0, 115, 2)	
     
     x_retract = unitcv(50.0)
+    
+    
+	{values obtained from arbor probing}
+    ball_runout = unitcv(ipf100)
+    ball_runout_angle = ipf101
+    combined_radius = unitcv(ipf102)
+    spindle_centerline_offset = unitcv(ipf103)
+	x_offset = unitcv(ipf104)
+	y_home_offset = unitcv(ipf105)
+	z_home_offset = unitcv(ipf106)
+	c_home_offset = unitcv(ipf107)
 
 subend	{ init_local_var }
 
@@ -163,6 +174,23 @@ sub measure_spindle_face
 	
 subend { measure_spindle_face }	
 
+{*************************************************************************
+* Subroutine  : apply_probe_workpiece
+* Description :	move the workpiece offset to the probe ball center.
+***************************************************************************}
+sub apply_probe_workpiece
+
+
+	workpiece x(x_offset - (probe_ball_dia/2))  { move workpiece coord to center of probe ball }
+
+	{TODO: apply known runout and offsets using workpiece?}
+    
+    OPEN ( &outdata, logfile, APPEND ) 
+	WRITE ( outdata, "worpiece applied = %f\n", (-x_offset - (probe_ball_dia/2)))
+	close (outdata)
+
+
+subend { apply_probe_workpiece }
 
 {*************************************************************************
 * Subroutine  : probe_spindle_auto
@@ -172,8 +200,8 @@ sub probe_spindle_auto
 
 	workpiece   		{ clear all existing workpiece offsets }
 	posnlatch   		{ obtain current the position of the effector point }
-	{TODO: set workpiece to previously calculated probe ball center}
-	workpiece x(unitcv(G_POSN_UF0) - (x_eot - (probe_ball_dia/2) - (arbor_dia/2)))  { move workpiece coord to center of probe ball }
+
+	calls "apply_probe_workpiece"
 
 	posnlatch
 	x_start = unitcv(g_posn_uf0) \
@@ -298,8 +326,6 @@ M1021		{ loader control off }
 sync
 calls "init_local_var"
 
-mx_home_preset = unitcv(200) {TODO: delete this}
-
 OPEN ( &outdata, datafile, OUTPUT ) {clear data file}
 close (outdata)
     
@@ -307,16 +333,10 @@ X(mx_home_preset)
 C(0)
 Y(0) Z(0)
 
-workpiece 	{ clear any workpiece offsets }
-m86 		{ column centre }
-
-X(mx_home_preset)
-Y(0) Z(0)
-
 c_angle = 0.0
 a_angle = 0.0
 
-for c_angle = -60.0 to -120.0 step -30.0 do
+for c_angle = -85.0 to -95.0 step -5.0 do
 	workpiece 	{ clear any workpiece offsets }
 	m86 		{ column centre }
     C(c_angle) A(a_angle)   {move the axes to measurement position}

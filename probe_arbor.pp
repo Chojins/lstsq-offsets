@@ -64,7 +64,7 @@ sub init_local_var
 
 	{probe and arbor parameters}
 	probe_ball_dia = unitcv(2.0)	{TODO: user input}
-	arbor_dia = unitcv(31.8)			{TODO: user input}
+	arbor_dia = unitcv(20.0)			{TODO: user input}
 	standoff_dist = unitcv(15)		{distance to retract from bar surface}
 	slow_probe_dist = unitcv(3)		{distance of slow feed probe move}
 
@@ -164,6 +164,21 @@ subend { measure_bar_tool }
 
 
 {*************************************************************************
+* Subroutine  : apply_probe_workpiece
+* Description :	move the workpiece offset to the probe ball center.
+***************************************************************************}
+sub apply_probe_workpiece
+
+    
+	workpiece x(probe_workpiece_x)  { move workpiece coord to center of probe ball }
+
+	{TODO: apply known runout and offsets using workpiece?}
+    
+
+
+subend { apply_probe_workpiece }
+
+{*************************************************************************
 * Subroutine  : probe_bar_auto
 * Description :	Auto Probing - read calculated approach and target points and probe
 ***************************************************************************}
@@ -171,8 +186,9 @@ sub probe_bar_auto
 
 	workpiece   		{ clear all existing workpiece offsets }
 	posnlatch   		{ obtain current the position of the effector point }
-	workpiece x(unitcv(G_POSN_UF0) - (x_eot - (probe_ball_dia/2) - (arbor_dia/2)))  { move workpiece coord to center of probe ball }
-
+    
+    calls "apply_probe_workpiece"
+	
 	posnlatch
 	x_start = unitcv(g_posn_uf0) \
 	y_start = unitcv(g_posn_uf1) \
@@ -254,7 +270,7 @@ sub probe_bar_auto
 		
         {record the probe contact point to the data file}
         OPEN ( &outdata, datafile, APPEND ) 
-        WRITE ( outdata, "%f	%f 	%f	%f 	%f \n", G_PROBED_UF[0] - mx_home_preset, G_PROBED_UF[1] - my_home_preset, zInv - mz_home_preset, G_PROBED_UF[9], G_PROBED_UF[11] - mc_home_preset)
+        WRITE ( outdata, "%f	%f 	%f	%f 	%f \n", G_PROBED_UF[0] - probe_workpiece_x, G_PROBED_UF[1] - my_home_preset, zInv - mz_home_preset, G_PROBED_UF[9], G_PROBED_UF[11] - mc_home_preset)
 		
 		conRow = conRow + 1
 		GOTO N25 { go around again }
@@ -300,6 +316,12 @@ sub dig_end_ball
 
 	OPEN ( &outdata, logfile, APPEND ) 
 	WRITE ( outdata, "x_eot_uf = %f, x_eot_jf = %f \n", unitcv(G_PROBED_UF0), unitcv(G_PROBED_JF0))
+	close (outdata)
+    
+    probe_workpiece_x = unitcv(G_POSN_UF0) - (x_eot - (probe_ball_dia/2) - (arbor_dia/2))
+    
+    OPEN ( &outdata, logfile, APPEND ) 
+	WRITE ( outdata, "worpiece x applied = %f\n", probe_workpiece_x)
 	close (outdata)
 
 subend { dig_end_ball }
@@ -362,8 +384,6 @@ M1021		{ loader control off }
 sync
 calls "init_local_var"
 
-mx_home_preset = unitcv(200) {TODO: delete this}
-
 OPEN ( &outdata, datafile, OUTPUT ) {clear data file}
 close (outdata)
     
@@ -391,7 +411,7 @@ for c_angle = 0.0 to -30.0 step -10.0 do
     a_angle = a_angle + 25
 forend
 
-for c_angle = -150.0 to -180 step -10.0 do
+for c_angle = -150.0 to -170 step -10.0 do {watch out for steady bed!}
     C(c_angle) A(a_angle)   {move the axes to measurement position}
     tg_prof_write(ArborPose, 0.0, 0.0, 0.0, 0.0, -c_angle, 180.0, 0)
     calls "measure_bar_tool"

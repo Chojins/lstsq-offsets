@@ -21,7 +21,7 @@ sub init_local_var
 	WRITE ( outdata, " Machine Offsets Write Results =================== \n %s \n", timestamp)
 	close (outdata)
 
-    {values obtaind from notebook}
+    {values obtained from notebook}
     spindle_centerline_offset = ipf100
     y_home_offset = ipf101
     z_home_offset = ipf102
