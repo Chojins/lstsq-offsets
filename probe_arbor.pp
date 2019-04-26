@@ -1,4 +1,3 @@
-
 {********************************************************
 * Subroutine  :	I N I T _ L O C A L _ V A R
 * Description :	Initialises the local variables
@@ -36,7 +35,9 @@ sub init_local_var
 	{ grinder c home position }	
 	dmy = dba_get_float_parm(&mc_home_preset, "5.home_position", "Joint.Hpp")
 
-
+	dba_get_float_parm(&spindle_ref_posn_current, "spindle_ref_posn", "spindle_ref_posn")
+	spindle_ref_posn_current = unitcv(spindle_ref_posn_current)
+	
 	{ steady type }
 	dmy = dba_get_int_parm(&steady_type, "steady_type", "Parm") \
 	
@@ -56,17 +57,11 @@ sub init_local_var
 	NoTouch 		= 0		{ flag to record if a touch is missed } 		 \
 
     {define the nominal bar gripper tool frame}
-	default_spindle_ref_posn = unitcv(-73.0)    {TODO:read this offset default for each machine type}
-	tg_prof_write(BarToolDef, 0.0, 0.0, default_spindle_ref_posn, 0.0, 0.0, 0.0, 0)
+	tg_prof_write(BarToolDef, 0.0, 0.0, spindle_ref_posn_current, 0.0, 0.0, 0.0, 0)
 
     {base transform is all zero because we are measuring the machine}
 	tg_prof_write(BaseTransform, -1.0, 0.0, 0.0, 0.0,   0.0, 0.0, 1.0, 0.0,   0.0, 1.0, 0.0, 0.0, 0)
 
-	{probe and arbor parameters}
-	probe_ball_dia = unitcv(3.0)	{TODO: user input}
-	ipf110 = probe_ball_dia			{copy ball diameter to global variable}
-
-	arbor_dia = unitcv(20.0)		{TODO: user input}
 	standoff_dist = unitcv(15)		{distance to retract from bar surface}
 	slow_probe_dist = unitcv(3)		{distance of slow feed probe move}
 
@@ -171,12 +166,9 @@ subend { measure_bar_tool }
 ***************************************************************************}
 sub apply_probe_workpiece
 
-    
 	workpiece x(probe_workpiece_x)  { move workpiece coord to center of probe ball }
 
 	{TODO: apply known runout and offsets using workpiece?}
-    
-
 
 subend { apply_probe_workpiece }
 
@@ -374,6 +366,60 @@ n999
 
 subend { move_headstock_to_arbor_mpg }
 
+{********************************************************
+* Subroutine  :	G E T _ A R B O R _D I A
+* Description : get the operator to enter the arbor diameter
+*********************************************************}
+sub get_arbor_dia
+    
+    n40	wclose
+    write("Enter the arbor diameter #i'inches'#m'mm'")
+    arbor_dia = 0.0
+    read(&arbor_dia)
+    wclose
+    write("Arbor diameter is %.3f #i'inches'#m'mm'\nis this correct? (Y)es (N)o", arbor_dia)
+
+    n41	readkey(&key)
+
+    if ((key != "Y") & (key != "y") & (key != "N") & (key != "n")) then
+        goto n41
+    ifend
+    if ( (key = "N" ) | (key = "n") ) then	
+        goto n40
+    ifend
+    
+    wclose
+
+subend {get_arbor_dia}
+
+{********************************************************
+* Subroutine  :	G E T _ P R O B E _ B A L L _D I A
+* Description : get the operator to enter the arbor diameter
+*********************************************************}
+sub get_probe_ball_dia
+    
+    n40	wclose
+    write("Enter the probe ruby ball diameter #i'inches'#m'mm'")
+    probe_ball_dia = 0.0
+    read(&probe_ball_dia)
+    wclose
+    write("Probe ruby ball diameter is %.3f #i'inches'#m'mm'\nis this correct? (Y)es (N)o", probe_ball_dia)
+
+    n41	readkey(&key)
+
+    if ((key != "Y") & (key != "y") & (key != "N") & (key != "n")) then
+        goto n41
+    ifend
+    if ( (key = "N" ) | (key = "n") ) then	
+        goto n40
+    ifend
+    
+	ipf110 = probe_ball_dia			{copy probe ball diameter to global variable}
+
+    wclose
+
+subend {get_probe_ball_dia}
+
 {************************
 *** M A I N   B O D Y ***
 *************************}
@@ -388,6 +434,9 @@ m86 		{ column centre }
 sync
 M1021		{ loader control off }
 sync
+
+calls "get_arbor_dia"
+calls "get_probe_ball_dia"
 calls "init_local_var"
 
 OPEN ( &outdata, datafile, OUTPUT ) {clear data file}
@@ -424,6 +473,8 @@ for c_angle = -150.0 to -170 step -10.0 do {watch out for steady bed!}
     X(mx_home_preset)
     a_angle = a_angle + 25
 forend
+
+C(0)
 
 return
 

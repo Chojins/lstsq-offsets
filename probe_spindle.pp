@@ -1,4 +1,3 @@
-
 {********************************************************
 * Subroutine  :	I N I T _ L O C A L _ V A R
 * Description :	Initialises the local variables
@@ -36,6 +35,8 @@ sub init_local_var
 	{ grinder c home position }	
 	dmy = dba_get_float_parm(&mc_home_preset, "5.home_position", "Joint.Hpp")
 
+	dba_get_float_parm(&spindle_ref_posn_current, "spindle_ref_posn", "spindle_ref_posn")
+	spindle_ref_posn_current = unitcv(spindle_ref_posn_current)
 
 	{ steady type }
 	dmy = dba_get_int_parm(&steady_type, "steady_type", "Parm") \
@@ -56,16 +57,36 @@ sub init_local_var
 	NoTouch 		= 0		{ flag to record if a touch is missed } 		 \
 
     {define the nominal bar gripper tool frame}
-	default_spindle_ref_posn = unitcv(-73.0)    {TODO:read this offset default for each machine type}
-	tg_prof_write(tool_def_prof, 0.0, 0.0, default_spindle_ref_posn, 0.0, 0.0, 0.0, 0)
+	tg_prof_write(tool_def_prof, 0.0, 0.0, spindle_ref_posn_current, 0.0, 0.0, 0.0, 0)
 
     {base transform is all zero because we are measuring the machine}
 	tg_prof_write(base_transform_prof, -1.0, 0.0, 0.0, 0.0,   0.0, 0.0, 1.0, 0.0,   0.0, 1.0, 0.0, 0.0, 0)
 
 	standoff_dist = unitcv(15)		{distance to retract from bar surface}
 	slow_probe_dist = unitcv(3)		{distance of slow feed probe move}
- 
-	spindle_face_rad = 16.25		{TODO: user input}
+	
+	{set radius of probing points to match spindle face based on MC variant}
+	
+	if (dba_variant_contains("fx") > 0) then
+		spindle_face_rad = unitcv(16.75)
+		goto n11
+	ifend
+
+	if (dba_variant_contains("mx") > 0) then
+		spindle_face_rad = unitcv(20.5)
+		goto n11
+	ifend
+
+	if (dba_variant_contains("tx") > 0) then	{TODO: add support for older models RX etc}
+		spindle_face_rad = unitcv(28.4)
+		goto n11
+	ifend
+
+	ep_warning("Machine variant not supported", NULL)	
+	end
+
+	n11 {go here if variant is found}
+	
 	a_axis_step = 25.0 {degrees}
 
 	probe_overtravel = unitcv(2.0)	{extra distance to move when probing spindle face}
