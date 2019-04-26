@@ -361,6 +361,8 @@ for c_angle = -85.0 to -95.0 step -5.0 do
     a_angle = a_angle + a_axis_step
 forend
 
+C(0)
+
 return
 
 { END OF FILE }

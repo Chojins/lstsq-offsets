@@ -398,20 +398,20 @@ subend {get_arbor_dia}
 *********************************************************}
 sub get_probe_ball_dia
     
-    n40	wclose
+    n50	wclose
     write("Enter the probe ruby ball diameter #i'inches'#m'mm'")
     probe_ball_dia = 0.0
     read(&probe_ball_dia)
     wclose
     write("Probe ruby ball diameter is %.3f #i'inches'#m'mm'\nis this correct? (Y)es (N)o", probe_ball_dia)
 
-    n41	readkey(&key)
+    n51	readkey(&key)
 
     if ((key != "Y") & (key != "y") & (key != "N") & (key != "n")) then
-        goto n41
+        goto n51
     ifend
     if ( (key = "N" ) | (key = "n") ) then	
-        goto n40
+        goto n50
     ifend
     
 	ipf110 = probe_ball_dia			{copy probe ball diameter to global variable}
