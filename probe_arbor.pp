@@ -63,8 +63,10 @@ sub init_local_var
 	tg_prof_write(BaseTransform, -1.0, 0.0, 0.0, 0.0,   0.0, 0.0, 1.0, 0.0,   0.0, 1.0, 0.0, 0.0, 0)
 
 	{probe and arbor parameters}
-	probe_ball_dia = unitcv(2.0)	{TODO: user input}
-	arbor_dia = unitcv(20.0)			{TODO: user input}
+	probe_ball_dia = unitcv(3.0)	{TODO: user input}
+	ipf110 = probe_ball_dia			{copy ball diameter to global variable}
+
+	arbor_dia = unitcv(20.0)		{TODO: user input}
 	standoff_dist = unitcv(15)		{distance to retract from bar surface}
 	slow_probe_dist = unitcv(3)		{distance of slow feed probe move}
 
@@ -319,10 +321,14 @@ sub dig_end_ball
 	close (outdata)
     
     probe_workpiece_x = unitcv(G_POSN_UF0) - (x_eot - (probe_ball_dia/2) - (arbor_dia/2))
+
+	ipf111 = probe_workpiece_x	{copy to global for use by spindle probing program}
     
     OPEN ( &outdata, logfile, APPEND ) 
 	WRITE ( outdata, "worpiece x applied = %f\n", probe_workpiece_x)
 	close (outdata)
+
+
 
 subend { dig_end_ball }
 

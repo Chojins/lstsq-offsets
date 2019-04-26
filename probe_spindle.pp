@@ -62,44 +62,43 @@ sub init_local_var
     {base transform is all zero because we are measuring the machine}
 	tg_prof_write(base_transform_prof, -1.0, 0.0, 0.0, 0.0,   0.0, 0.0, 1.0, 0.0,   0.0, 1.0, 0.0, 0.0, 0)
 
-	{probe and arbor parameters}
-	probe_ball_dia = unitcv(1.0)	{TODO: user input ; reduced rad to ensure contact}
-
 	standoff_dist = unitcv(15)		{distance to retract from bar surface}
 	slow_probe_dist = unitcv(3)		{distance of slow feed probe move}
  
-	spindle_face_rad = 16.25
+	spindle_face_rad = 16.25		{TODO: user input}
 	a_axis_step = 25.0 {degrees}
 
+	probe_overtravel = unitcv(2.0)	{extra distance to move when probing spindle face}
+
 	{generate probe points for probing spindle front face}
-	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(0)	,	spindle_face_rad*sin(0)	,	standoff_dist,	0	)
-	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(0)	,	spindle_face_rad*sin(0)	,	0	,	1	)
+	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(0) 	,	spindle_face_rad*sin(0) 	,	standoff_dist,	0	)
+	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(0) 	,	spindle_face_rad*sin(0) 	,	-probe_overtravel	,	1	)
 	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(30)	,	spindle_face_rad*sin(30)	,	standoff_dist,	2	)
-	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(30)	,	spindle_face_rad*sin(30)	,	0	,	3	)
+	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(30)	,	spindle_face_rad*sin(30)	,	-probe_overtravel	,	3	)
 	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(60)	,	spindle_face_rad*sin(60)	,	standoff_dist,	4	)
-	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(60)	,	spindle_face_rad*sin(60)	,	0	,	5	)
+	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(60)	,	spindle_face_rad*sin(60)	,	-probe_overtravel	,	5	)
 	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(90)	,	spindle_face_rad*sin(90)	,	standoff_dist,	6	)
-	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(90)	,	spindle_face_rad*sin(90)	,	0	,	7	)
+	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(90)	,	spindle_face_rad*sin(90)	,	-probe_overtravel	,	7	)
     
 
 	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(120)	,	spindle_face_rad*sin(120)	,	standoff_dist,	8	)
-	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(120)	,	spindle_face_rad*sin(120)	,	0	,	9	)
+	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(120)	,	spindle_face_rad*sin(120)	,	-probe_overtravel	,	9	)
 	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(150)	,	spindle_face_rad*sin(150)	,	standoff_dist,	10	)
-	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(150)	,	spindle_face_rad*sin(150)	,	0	,	11	)
+	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(150)	,	spindle_face_rad*sin(150)	,	-probe_overtravel	,	11	)
 	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(180)	,	spindle_face_rad*sin(180)	,	standoff_dist,	12	)
-	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(180)	,	spindle_face_rad*sin(180)	,	0	,	13	)
+	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(180)	,	spindle_face_rad*sin(180)	,	-probe_overtravel	,	13	)
 	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(210)	,	spindle_face_rad*sin(210)	,	standoff_dist,	14	)
-	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(210)	,	spindle_face_rad*sin(210)	,	0	,	15	)
+	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(210)	,	spindle_face_rad*sin(210)	,	-probe_overtravel	,	15	)
 
     
 	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(240)	,	spindle_face_rad*sin(240)	,	standoff_dist,	16	)
-	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(240)	,	spindle_face_rad*sin(240)	,	0	,	17	)
+	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(240)	,	spindle_face_rad*sin(240)	,	-probe_overtravel	,	17	)
 	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(270)	,	spindle_face_rad*sin(270)	,	standoff_dist,	18	)
-	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(270)	,	spindle_face_rad*sin(270)	,	0	,	19	)
+	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(270)	,	spindle_face_rad*sin(270)	,	-probe_overtravel	,	19	)
 	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(300)	,	spindle_face_rad*sin(300)	,	standoff_dist,	20	)
-	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(300)	,	spindle_face_rad*sin(300)	,	0	,	21	)
+	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(300)	,	spindle_face_rad*sin(300)	,	-probe_overtravel	,	21	)
 	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(330)	,	spindle_face_rad*sin(330)	,	standoff_dist,	22	)
-	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(330)	,	spindle_face_rad*sin(330)	,	0	,	23	)
+	tg_prof_write(spindle_points_prof,	spindle_face_rad*cos(330)	,	spindle_face_rad*sin(330)	,	-probe_overtravel	,	23	)
 		
 	{ define known axis center points in arbor frame for guess}
 	tg_prof_write(spindle_axis_prof, 0, 0, 0, 0)	
@@ -108,16 +107,12 @@ sub init_local_var
     
     x_retract = unitcv(50.0)
     
-    
-	{values obtained from arbor probing}
-    ball_runout = unitcv(ipf100)
-    ball_runout_angle = ipf101
-    combined_radius = unitcv(ipf102)
-    spindle_centerline_offset = unitcv(ipf103)
-	x_offset = unitcv(ipf104)
-	y_home_offset = unitcv(ipf105)
-	z_home_offset = unitcv(ipf106)
-	c_home_offset = unitcv(ipf107)
+	probe_ball_dia = ipf110		{these is copied from the arbor probing program}
+	probe_workpiece_x = ipf111
+  
+    OPEN ( &outdata, logfile, APPEND ) 
+	WRITE ( outdata, "worpiece x = %f\n", probe_workpiece_x)
+	close (outdata)
 
 subend	{ init_local_var }
 
@@ -181,13 +176,9 @@ subend { measure_spindle_face }
 sub apply_probe_workpiece
 
 
-	workpiece x(x_offset - (probe_ball_dia/2))  { move workpiece coord to center of probe ball }
-
+	workpiece x(probe_workpiece_x)  { move workpiece coord to center of probe ball }
 	{TODO: apply known runout and offsets using workpiece?}
-    
-    OPEN ( &outdata, logfile, APPEND ) 
-	WRITE ( outdata, "worpiece applied = %f\n", (-x_offset - (probe_ball_dia/2)))
-	close (outdata)
+
 
 
 subend { apply_probe_workpiece }
@@ -282,9 +273,11 @@ sub probe_spindle_auto
 		
 		zInv = -1 * G_PROBED_UF[2] { grinder coords arn't right hand rule.. }
 		
+		{TODO: can we use G_PROBED_MF here to eliminate the need to remove the workpiece offset?}
+
         {record the probe contact point to the data file}
         OPEN ( &outdata, datafile, APPEND ) 
-        WRITE ( outdata, "%f	%f 	%f	%f 	%f \n", G_PROBED_UF[0] - mx_home_preset, G_PROBED_UF[1] - my_home_preset, zInv - mz_home_preset, G_PROBED_UF[9], G_PROBED_UF[11] - mc_home_preset)
+        WRITE ( outdata, "%f	%f 	%f	%f 	%f \n", G_PROBED_UF[0] - probe_workpiece_x, G_PROBED_UF[1] - my_home_preset, zInv - mz_home_preset, G_PROBED_UF[9], G_PROBED_UF[11] - mc_home_preset)
 		
 		conRow = conRow + 1
 		GOTO N25 { go around again }
@@ -293,6 +286,7 @@ sub probe_spindle_auto
 	N24
 	probing_end()		{ We are finished probing for now. }
 	workpiece
+
 subend { probe_spindle_auto }
 
 {*******************************************************************
