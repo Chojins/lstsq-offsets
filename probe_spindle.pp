@@ -298,7 +298,7 @@ sub probe_spindle_auto
 
         {record the probe contact point to the data file}
         OPEN ( &outdata, datafile, APPEND ) 
-        WRITE ( outdata, "%f	%f 	%f	%f 	%f \n", G_PROBED_UF[0] - probe_workpiece_x, G_PROBED_UF[1] - my_home_preset, zInv - mz_home_preset, G_PROBED_UF[9], G_PROBED_UF[11] - mc_home_preset)
+        WRITE ( outdata, "%f	%f 	%f	%f 	%f \n", G_PROBED_UF[0] - probe_workpiece_x, G_PROBED_UF[1] - my_home_preset, zInv + mz_home_preset, G_PROBED_UF[9], G_PROBED_UF[11] - mc_home_preset)
 		
 		conRow = conRow + 1
 		GOTO N25 { go around again }
