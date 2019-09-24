@@ -264,7 +264,7 @@ sub probe_bar_auto
 		
         {record the probe contact point to the data file}
         OPEN ( &outdata, datafile, APPEND ) 
-        WRITE ( outdata, "%f	%f 	%f	%f 	%f \n", G_PROBED_UF[0] - probe_workpiece_x, G_PROBED_UF[1] - my_home_preset, zInv - mz_home_preset, G_PROBED_UF[9], G_PROBED_UF[11] - mc_home_preset)
+        WRITE ( outdata, "%f	%f 	%f	%f 	%f \n", G_PROBED_UF[0] - probe_workpiece_x, G_PROBED_UF[1] - my_home_preset, zInv + mz_home_preset, G_PROBED_UF[9], G_PROBED_UF[11] - mc_home_preset)
 		
 		conRow = conRow + 1
 		GOTO N25 { go around again }
@@ -466,7 +466,7 @@ for c_angle = 0.0 to -30.0 step -10.0 do
     a_angle = a_angle + 25
 forend
 
-for c_angle = -150.0 to -170 step -10.0 do {watch out for steady bed!}
+for c_angle = -150.0 to -160 step -10.0 do {watch out for steady bed!}
     C(c_angle) A(a_angle)   {move the axes to measurement position}
     tg_prof_write(ArborPose, 0.0, 0.0, 0.0, 0.0, -c_angle, 180.0, 0)
     calls "measure_bar_tool"
