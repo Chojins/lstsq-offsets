@@ -111,11 +111,11 @@ calls "wait_for_ack"
 wclose
 
 {save the data to p_user}
-dba_put_float_parm(DBA_USER, "spindle_cntr_line_off", spindle_centerline_offset / unitcv(1.0))
-dba_put_float_parm(DBA_USER, "2.home_position", y_home_offset / unitcv(1.0))
-dba_put_float_parm(DBA_USER, "3.home_position", z_home_offset / unitcv(1.0))
-dba_put_float_parm(DBA_USER, "5.home_position", c_home_offset / unitcv(1.0))
-dba_put_float_parm(DBA_USER, "spindle_ref_posn", spindle_ref_posn / unitcv(1.0))
+dba_put_float_parm(DBA_OEM, "spindle_cntr_line_off", spindle_centerline_offset / unitcv(1.0))
+dba_put_float_parm(DBA_OEM, "2.home_position", y_home_offset / unitcv(1.0))
+dba_put_float_parm(DBA_OEM, "3.home_position", z_home_offset / unitcv(1.0))
+dba_put_float_parm(DBA_OEM, "5.home_position", c_home_offset / unitcv(1.0))
+dba_put_float_parm(DBA_OEM, "spindle_ref_posn", spindle_ref_posn / unitcv(1.0))
 
 return
 

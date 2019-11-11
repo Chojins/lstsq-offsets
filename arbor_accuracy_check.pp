@@ -41,6 +41,8 @@ sub init_local_var
 	
 	probe_ball_dia = unitcv(ipf110)
 	ball_radius = probe_ball_dia/2
+    
+    arbor_dia = arbor_radius*2
 	
 	{ steady type }
 	dmy = dba_get_int_parm(&steady_type, "steady_type", "Parm") \
@@ -119,7 +121,9 @@ sub measure_bar_tool
 	{ generate a set of approach points for the current pose }
 	gbif_result = gbif("probe_point_gen", ArborPose, BarToolDef, BaseTransform, pBarPoints,\
 					   pBarAxisNom, wBarAxisNom, wBarPoints, approachThetas) 
-    
+                       
+    {gbif("writePDToFile", wBarPoints, 24, 3, logfile, "wBarPoints", 1, 1)}
+
 	AppPoint    = 0 { index for probe point matrix }
     
 	{ probe the bar}
@@ -133,6 +137,9 @@ subend { measure_bar_tool }
 * Description :	move the workpiece offset to the probe ball center.
 ***************************************************************************}
 sub apply_probe_workpiece
+    workpiece
+    X(mx_home_preset)
+    Y(0) Z(0)
 
 	workpiece   		{ clear all existing workpiece offsets }
 	posnlatch   		{ obtain current the position of the effector point }
@@ -141,9 +148,13 @@ sub apply_probe_workpiece
 
 	probe_workpiece_x = x_offset
 	probe_workpiece_y = ball_runout*sin(ball_runout_angle + a_angle_degrees)
-	probe_workpiece_z = ball_runout*cos(ball_runout_angle + a_angle_degrees)
+	probe_workpiece_z = -ball_runout*cos(ball_runout_angle + a_angle_degrees)
 
 	workpiece x(probe_workpiece_x) y(probe_workpiece_y) z(probe_workpiece_z) { move workpiece coord to center of probe ball }
+    
+    OPEN ( &outdata, logfile, APPEND ) 
+    WRITE ( outdata, "probe_workpiece_x = %f probe_workpiece_y = %f probe_workpiece_z = %f\n", probe_workpiece_x, probe_workpiece_y, probe_workpiece_z)
+    close (outdata)
 
 
 subend { apply_probe_workpiece }
@@ -253,15 +264,16 @@ sub probe_bar_auto
         spindle_origin_z = 0
         
         {find the closest point on the spindle axis}
-        closest_point_x = spindle_origin_x + ((contact_x-spindle_origin_x)*ui+(contact_y-spindle_origin_y)*uj+(contact_z-spindle_origin_z)*uk)*ui;
-        closest_point_y = spindle_origin_y + ((contact_x-spindle_origin_x)*ui+(contact_y-spindle_origin_y)*uj+(contact_z-spindle_origin_z)*uk)*uj;
-        closest_point_z = spindle_origin_z + ((contact_x-spindle_origin_x)*ui+(contact_y-spindle_origin_y)*uj+(contact_z-spindle_origin_z)*uk)*uk;
+        closest_point_x = spindle_origin_x + ((contact_x-spindle_origin_x)*ui+(contact_y-spindle_origin_y)*uj+(contact_z-spindle_origin_z)*uk)*ui
+        closest_point_y = spindle_origin_y + ((contact_x-spindle_origin_x)*ui+(contact_y-spindle_origin_y)*uj+(contact_z-spindle_origin_z)*uk)*uj
+        closest_point_z = spindle_origin_z + ((contact_x-spindle_origin_x)*ui+(contact_y-spindle_origin_y)*uj+(contact_z-spindle_origin_z)*uk)*uk
 
-		error = sqrt(((closest_point_x - contact_x)**2 + (closest_point_y - contact_y)**2 + (closest_point_z - contact_z)**2)) - (ball_radius + arbor_radius)
+		error_calc = sqrt(((closest_point_x - contact_x)*(closest_point_x - contact_x) + (closest_point_y - contact_y)*(closest_point_y - contact_y) + (closest_point_z - contact_z)*(closest_point_z - contact_z))) - (ball_radius + arbor_radius)
 
         OPEN ( &outdata, datafile, APPEND ) 
-        WRITE ( outdata, "%f	%f	%f	%f	%f	%f	%f	%f\n", contact_x, contact_y, contact_z, closest_point_x, closest_point_y, closest_point_z, c_angle_degrees, error)
-		
+        WRITE ( outdata, "%f	%f	%f	%f	%f	%f	%f	%f\n", contact_x, contact_y, contact_z, closest_point_x, closest_point_y, closest_point_z, c_angle_degrees, error_calc)
+		close (outdata)
+
 		conRow = conRow + 1
 		GOTO N25 { go around again }
 	ifend
