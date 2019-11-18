@@ -198,6 +198,10 @@ sub probe_bar_auto
 
 	N25
 	if (conRow < 12) then
+		calls "get_random"			{generate random number}
+		a_angle = rand_num * 360
+		A(a_angle)					{rotate probe to random angle}
+
 		tg_prof_read(wBarPoints, &AppX, &AppY, &AppZ, AppPoint) { Approach point }
 		AppX = unitcv(AppX) \
 		AppY = unitcv(AppY) \
@@ -265,7 +269,8 @@ sub probe_bar_auto
         {record the probe contact point to the data file}
         OPEN ( &outdata, datafile, APPEND ) 
         WRITE ( outdata, "%f	%f 	%f	%f 	%f \n", G_PROBED_UF[0] - probe_workpiece_x, G_PROBED_UF[1] - my_home_preset, zInv + mz_home_preset, G_PROBED_UF[9], G_PROBED_UF[11] - mc_home_preset)
-		
+		close (outdata)
+
 		conRow = conRow + 1
 		GOTO N25 { go around again }
 	ifend
@@ -420,6 +425,18 @@ sub get_probe_ball_dia
 
 subend {get_probe_ball_dia}
 
+{********************************************************
+* Subroutine  :	G E T _ R A N D O M
+* Description : a random number between 0 and 1 and update variable rand_num
+*********************************************************}
+sub get_random
+
+	rand_int = random(0)
+	rand_num =  rand_int /32767.0
+
+subend {get_random}
+
+
 {************************
 *** M A I N   B O D Y ***
 *************************}
@@ -459,19 +476,17 @@ c_angle = 0.0
 a_angle = 0.0
 
 for c_angle = 0.0 to -30.0 step -10.0 do
-    C(c_angle) A(a_angle)   {move the axes to measurement position}
+    C(c_angle)   {move the axes to measurement position}
     tg_prof_write(ArborPose, 0.0, 0.0, 0.0, 0.0, c_angle, 0.0, 0)
     calls "measure_bar_tool"
     X(mx_home_preset)
-    a_angle = a_angle + 25
 forend
 
 for c_angle = -150.0 to -160 step -10.0 do {watch out for steady bed!}
-    C(c_angle) A(a_angle)   {move the axes to measurement position}
+    C(c_angle)   {move the axes to measurement position}
     tg_prof_write(ArborPose, 0.0, 0.0, 0.0, 0.0, -c_angle, 180.0, 0)
     calls "measure_bar_tool"
     X(mx_home_preset)
-    a_angle = a_angle + 25
 forend
 
 C(0)
