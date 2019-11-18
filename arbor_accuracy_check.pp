@@ -6,12 +6,12 @@
 *********************************************************}
 sub init_local_var
 	logfile = "p:/tg7/misc/arbor_probing_Log.txt"
-    datafile = "P:/TG7/misc/arbor_probing_data.txt"
+    datafile = "P:/TG7/misc/arbor_accuracy_data.txt"
 
 	timestamp = strdate() { strftime wrapper, defaults to "%c", so "%Y.%m.%d %H:%M:%S" etc }
 
 	OPEN ( &outdata, logfile, APPEND ) 
-	WRITE ( outdata, " Machine Offsets Arbor Probing =================== \n %s \n", timestamp)
+	WRITE ( outdata, " Machine Offsets Arbor Accuracy Check =================== \n %s \n", timestamp)
 	close (outdata)
 
 	dmy = dba_get_string_parm(&cyc_path,"tg.cyc_dir","dirs.dir")	\
@@ -24,19 +24,25 @@ sub init_local_var
 	dmy = dba_get_float_parm(&mx_home_preset, "1.home_position", "Joint.Hpp") \
 	mx_home_preset = unitcv(mx_home_preset) \
 
-	{ grinder y home position }	
-	dmy = dba_get_float_parm(&my_home_preset, "2.home_position", "Joint.Hpp") \	
-	my_home_preset = unitcv(my_home_preset) \
-
-	{ grinder z home position }	
-	dmy = dba_get_float_parm(&mz_home_preset, "3.home_position", "Joint.Hpp") \	
-	mz_home_preset = unitcv(mz_home_preset) \
-
-	{ grinder c home position }	
-	dmy = dba_get_float_parm(&mc_home_preset, "5.home_position", "Joint.Hpp")
-
+	{read db spindle ref position}	
 	dba_get_float_parm(&spindle_ref_posn_current, "spindle_ref_posn", "spindle_ref_posn")
 	spindle_ref_posn_current = unitcv(spindle_ref_posn_current)
+
+	{values obtained from notebook - in metric}
+	ball_runout = unitcv(ipf100)
+	ball_runout_angle = ipf101
+	arbor_radius = unitcv(ipf102)
+    spindle_centerline_offset = unitcv(ipf103)
+    x_offset = unitcv(ipf104)
+	y_home_offset = unitcv(ipf105)
+	z_home_offset = unitcv(ipf106)
+	c_home_offset = unitcv(ipf107)
+	spindle_ref_posn = unitcv(ipf108)
+	
+	probe_ball_dia = unitcv(ipf110)
+	ball_radius = probe_ball_dia/2
+    
+    arbor_dia = arbor_radius*2
 	
 	{ steady type }
 	dmy = dba_get_int_parm(&steady_type, "steady_type", "Parm") \
@@ -107,42 +113,6 @@ sub init_local_var
 subend	{ init_local_var }
 
 {********************************************************
-* Subroutine  :	reset_ack_latch
-* Description :	reset latch for user to press ACK
-*********************************************************}
-sub reset_ack_latch
-
-n10
-	%GPB_ACK_LATCH_RESET = on	{ set plc bit to reset ACK, %GPB_ACK_LATCH}
-	sync
-	waitplc(1)					{ wait for 1 complete plc scan to reset ACK }
-	if %GPB_ACK_LATCH then		{ if ACK latch still set (button press or stuck) then }
-		dwell x0.05				{ wait until it is reset }
-		sync
-		goto n10		
-	ifend
-	%GPB_ACK_LATCH_RESET = off	{ set plc bit to reset ACK, %GPB_ACK_LATCH}
-
-subend	{ reset_ack_latch }
-
-{********************************************************
-* Subroutine  :	wait_for_ack
-* Description :	keep looping until ACK is pressed.  
-*********************************************************}
-sub wait_for_ack
-
-	{******* wait for ACK to be pressed *******}
-n40
-	if !(%GPB_ACK_LATCH) then	{ if ACK latch still set (button press or stuck) then }
-		dwell x0.05				{ wait until it is reset }
-		sync
-		goto n40		
-	ifend
-	sync
-
-subend { wait_for_ack }
-
-{********************************************************
 * Subroutine  :	measure_bar_tool
 * Description :	probe the arbor
 *********************************************************}
@@ -151,7 +121,9 @@ sub measure_bar_tool
 	{ generate a set of approach points for the current pose }
 	gbif_result = gbif("probe_point_gen", ArborPose, BarToolDef, BaseTransform, pBarPoints,\
 					   pBarAxisNom, wBarAxisNom, wBarPoints, approachThetas) 
-    
+                       
+    {gbif("writePDToFile", wBarPoints, 24, 3, logfile, "wBarPoints", 1, 1)}
+
 	AppPoint    = 0 { index for probe point matrix }
     
 	{ probe the bar}
@@ -165,10 +137,25 @@ subend { measure_bar_tool }
 * Description :	move the workpiece offset to the probe ball center.
 ***************************************************************************}
 sub apply_probe_workpiece
+    workpiece
+    X(mx_home_preset)
+    Y(0) Z(0)
 
-	workpiece x(probe_workpiece_x)  { move workpiece coord to center of probe ball }
+	workpiece   		{ clear all existing workpiece offsets }
+	posnlatch   		{ obtain current the position of the effector point }
 
-	{TODO: apply known runout and offsets using workpiece?}
+	a_angle_degrees = g_posn_uf9
+
+	probe_workpiece_x = x_offset
+	probe_workpiece_y = ball_runout*sin(ball_runout_angle + a_angle_degrees)
+	probe_workpiece_z = -ball_runout*cos(ball_runout_angle + a_angle_degrees)
+
+	workpiece x(probe_workpiece_x) y(probe_workpiece_y) z(probe_workpiece_z) { move workpiece coord to center of probe ball }
+    
+    OPEN ( &outdata, logfile, APPEND ) 
+    WRITE ( outdata, "probe_workpiece_x = %f probe_workpiece_y = %f probe_workpiece_z = %f\n", probe_workpiece_x, probe_workpiece_y, probe_workpiece_z)
+    close (outdata)
+
 
 subend { apply_probe_workpiece }
 
@@ -178,9 +165,6 @@ subend { apply_probe_workpiece }
 ***************************************************************************}
 sub probe_bar_auto
 
-	workpiece   		{ clear all existing workpiece offsets }
-	posnlatch   		{ obtain current the position of the effector point }
-    
     calls "apply_probe_workpiece"
 	
 	posnlatch
@@ -198,10 +182,6 @@ sub probe_bar_auto
 
 	N25
 	if (conRow < 12) then
-		calls "get_random"			{generate random number}
-		a_angle = rand_num * 360
-		A(a_angle)					{rotate probe to random angle}
-
 		tg_prof_read(wBarPoints, &AppX, &AppY, &AppZ, AppPoint) { Approach point }
 		AppX = unitcv(AppX) \
 		AppY = unitcv(AppY) \
@@ -266,9 +246,32 @@ sub probe_bar_auto
 		
 		zInv = -1 * G_PROBED_UF[2] { grinder coords arn't right hand rule.. }
 		
-        {record the probe contact point to the data file}
+        {calculate the position error and record to the data file}
+		{find equation of the c-axis vector}
+		c_angle_degrees = G_PROBED_UF[11]
+
+		contact_x = unitcv(G_PROBED_UF[0])
+		contact_y = unitcv(G_PROBED_UF[1])
+		contact_z = unitcv(zInv)
+
+        ui = -sin(c_angle_degrees)
+        uj = cos(c_angle_degrees)
+        uk = 0
+
+		{coords of the spindle axis origin}
+        spindle_origin_x = cos(c_angle_degrees)*(-spindle_centerline_offset)
+        spindle_origin_y = sin(c_angle_degrees)*(-spindle_centerline_offset)
+        spindle_origin_z = 0
+        
+        {find the closest point on the spindle axis}
+        closest_point_x = spindle_origin_x + ((contact_x-spindle_origin_x)*ui+(contact_y-spindle_origin_y)*uj+(contact_z-spindle_origin_z)*uk)*ui
+        closest_point_y = spindle_origin_y + ((contact_x-spindle_origin_x)*ui+(contact_y-spindle_origin_y)*uj+(contact_z-spindle_origin_z)*uk)*uj
+        closest_point_z = spindle_origin_z + ((contact_x-spindle_origin_x)*ui+(contact_y-spindle_origin_y)*uj+(contact_z-spindle_origin_z)*uk)*uk
+
+		error_calc = sqrt(((closest_point_x - contact_x)*(closest_point_x - contact_x) + (closest_point_y - contact_y)*(closest_point_y - contact_y) + (closest_point_z - contact_z)*(closest_point_z - contact_z))) - (ball_radius + arbor_radius)
+
         OPEN ( &outdata, datafile, APPEND ) 
-        WRITE ( outdata, "%f	%f 	%f	%f 	%f \n", G_PROBED_UF[0] - probe_workpiece_x, G_PROBED_UF[1] - my_home_preset, zInv + mz_home_preset, G_PROBED_UF[9], G_PROBED_UF[11] - mc_home_preset)
+        WRITE ( outdata, "%f	%f	%f	%f	%f	%f	%f	%f\n", contact_x, contact_y, contact_z, closest_point_x, closest_point_y, closest_point_z, c_angle_degrees, error_calc)
 		close (outdata)
 
 		conRow = conRow + 1
@@ -279,163 +282,6 @@ sub probe_bar_auto
 	probing_end()		{ We are finished probing for now. }
 	workpiece
 subend { probe_bar_auto }
-
-{********************************************************
-* Subroutine  :	dig_end_ball
-* Description :	probe the sphere in the headstock 
-*********************************************************}
-sub dig_end_ball
-
-	calls "move_headstock_to_arbor_mpg"
-
-	select_active_probe(3) { 3 is the wheel probe input}
-
-	probing_begin()
-	
-	linear
-	f(probing_frate)	{ set feedrate }
-		X(unitcv(-100.0)) stopifnot xolb555	{ Move to some negative position }
-
-	probelatch
-	sync
-	waitplc(1)
-	if xolb555 	calls  "missed_chuck"		{ did not touch the tool }
-
-	relative
-	rapid
-		x(x_retract)       { relative instead of absolute to avoid
-							probe breakage when probe is not reliable }
-	absolute
-
-	x_eot = unitcv(G_PROBED_UF0) 
-
-	sync
-	waitplc(1)
-	probing_end()
-
-	OPEN ( &outdata, logfile, APPEND ) 
-	WRITE ( outdata, "x_eot_uf = %f, x_eot_jf = %f \n", unitcv(G_PROBED_UF0), unitcv(G_PROBED_JF0))
-	close (outdata)
-    
-    probe_workpiece_x = unitcv(G_POSN_UF0) - (x_eot - (probe_ball_dia/2) - (arbor_dia/2))
-
-	ipf111 = probe_workpiece_x	{copy to global for use by spindle probing program}
-    
-    OPEN ( &outdata, logfile, APPEND ) 
-	WRITE ( outdata, "worpiece x applied = %f\n", probe_workpiece_x)
-	close (outdata)
-
-
-
-subend { dig_end_ball }
-
-{*******************************************************************
-* Subroutine :  M I S S E D _ C H U C K
-* Description : Aborts the cycle because the probe misses the 
-*				with ball when xolb555=on 
-********************************************************************}
-sub missed_chuck
-
-	probing_end()
-	ep_warning	("probing move missed")
-	m86 { for rx7 to cancel m89 preset of C offset }
-	end
-
-subend { missed_chuck }
-
-{ *************************************************************************
-* Subroutine  : move_headstock_to_arbor_mpg
-* Description : Allow MPG to a position, return when ack is pressed
-*************************************************************************** }
-sub move_headstock_to_arbor_mpg
-
-	absolute
-	callp cyc_path+"/tg_dis_axis"
-
-	%XILB_SELECT_X_AXIS = on
- 	callp cyc_path+"/tg_en_mpg"
-	n100 if %GPB_ACK_LATCH goto n999
-	
-	wclose
-	write("Jog probe in X to 5mm from arbor.\n\nPress <ACK> to probe.")
-	
-	%GPB_EXTERNAL_MPG_ACTIVATED = on
- 	callp cyc_path+"/tg_en_mpg"
- 	if %XILB_SELECT_X_AXIS callp cyc_path+"/tg_x_mpg"
-  	if %XILB_SELECT_Y_AXIS callp cyc_path+"/tg_y_mpg"
-  	if %XILB_SELECT_Z_AXIS callp cyc_path+"/tg_z_mpg"
-	goto n100
-n999 
-	wclose
-	%GPB_EXTERNAL_MPG_ACTIVATED = off
-
-subend { move_headstock_to_arbor_mpg }
-
-{********************************************************
-* Subroutine  :	G E T _ A R B O R _D I A
-* Description : get the operator to enter the arbor diameter
-*********************************************************}
-sub get_arbor_dia
-    
-    n40	wclose
-    write("Enter the arbor diameter #i'inches'#m'mm'")
-    arbor_dia = 0.0
-    read(&arbor_dia)
-    wclose
-    write("Arbor diameter is %.3f #i'inches'#m'mm'\nis this correct? (Y)es (N)o", arbor_dia)
-
-    n41	readkey(&key)
-
-    if ((key != "Y") & (key != "y") & (key != "N") & (key != "n")) then
-        goto n41
-    ifend
-    if ( (key = "N" ) | (key = "n") ) then	
-        goto n40
-    ifend
-    
-    wclose
-
-subend {get_arbor_dia}
-
-{********************************************************
-* Subroutine  :	G E T _ P R O B E _ B A L L _D I A
-* Description : get the operator to enter the arbor diameter
-*********************************************************}
-sub get_probe_ball_dia
-    
-    n50	wclose
-    write("Enter the probe ruby ball diameter #i'inches'#m'mm'")
-    probe_ball_dia = 0.0
-    read(&probe_ball_dia)
-    wclose
-    write("Probe ruby ball diameter is %.3f #i'inches'#m'mm'\nis this correct? (Y)es (N)o", probe_ball_dia)
-
-    n51	readkey(&key)
-
-    if ((key != "Y") & (key != "y") & (key != "N") & (key != "n")) then
-        goto n51
-    ifend
-    if ( (key = "N" ) | (key = "n") ) then	
-        goto n50
-    ifend
-    
-	ipf110 = probe_ball_dia			{copy probe ball diameter to global variable}
-
-    wclose
-
-subend {get_probe_ball_dia}
-
-{********************************************************
-* Subroutine  :	G E T _ R A N D O M
-* Description : a random number between 0 and 1 and update variable rand_num
-*********************************************************}
-sub get_random
-
-	rand_int = random(0)
-	rand_num =  rand_int /32767.0
-
-subend {get_random}
-
 
 {************************
 *** M A I N   B O D Y ***
@@ -452,8 +298,6 @@ sync
 M1021		{ loader control off }
 sync
 
-calls "get_arbor_dia"
-calls "get_probe_ball_dia"
 calls "init_local_var"
 
 OPEN ( &outdata, datafile, OUTPUT ) {clear data file}
@@ -462,9 +306,6 @@ close (outdata)
 X(mx_home_preset)
 C(0)
 Y(0) Z(0)
-
-{jog probe tip to arbor in X}
-calls "dig_end_ball"
 
 workpiece 	{ clear any workpiece offsets }
 m86 		{ column centre }
@@ -475,18 +316,20 @@ Y(0) Z(0)
 c_angle = 0.0
 a_angle = 0.0
 
-for c_angle = 0.0 to -30.0 step -10.0 do
-    C(c_angle)   {move the axes to measurement position}
+for c_angle = -5.0 to -25.0 step -10.0 do
+    C(c_angle) A(a_angle)   {move the axes to measurement position}
     tg_prof_write(ArborPose, 0.0, 0.0, 0.0, 0.0, c_angle, 0.0, 0)
     calls "measure_bar_tool"
     X(mx_home_preset)
+    a_angle = a_angle + 25
 forend
 
-for c_angle = -150.0 to -160 step -10.0 do {watch out for steady bed!}
-    C(c_angle)   {move the axes to measurement position}
+for c_angle = -145.0 to -155 step -10.0 do {watch out for steady bed!}
+    C(c_angle) A(a_angle)   {move the axes to measurement position}
     tg_prof_write(ArborPose, 0.0, 0.0, 0.0, 0.0, -c_angle, 180.0, 0)
     calls "measure_bar_tool"
     X(mx_home_preset)
+    a_angle = a_angle + 25
 forend
 
 C(0)

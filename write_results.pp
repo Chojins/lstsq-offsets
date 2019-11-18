@@ -21,11 +21,13 @@ sub init_local_var
 	WRITE ( outdata, " Machine Offsets Write Results =================== \n %s \n", timestamp)
 	close (outdata)
 
-    {values obtaind from notebook}
-    spindle_centerline_offset = ipf100
-    y_home_offset = ipf101
-    z_home_offset = ipf102
-    c_home_offset = ipf103
+    {values obtained from notebook}
+    spindle_centerline_offset = ipf103
+    x_offset = ipf104
+	y_home_offset = ipf105
+	z_home_offset = ipf106
+	c_home_offset = ipf107
+	spindle_ref_posn = ipf108
 
     {read the current offset values}
 	dba_get_float_parm(&spindle_centerline_offset_current, "spindle_cntr_line_off", "spindle_cntr_line_off")
@@ -39,13 +41,17 @@ sub init_local_var
 
     dba_get_float_parm(&c_home_offset_current, "5.home_position", "5.home_position")
 
+	dba_get_float_parm(&spindle_ref_posn_current, "spindle_ref_posn", "spindle_ref_posn")
+	spindle_ref_posn_current = unitcv(spindle_ref_posn_current)
+
     {log Result }
     OPEN ( &outdata, logfile, APPEND ) 
-    write(outdata, "\t\t\t\t\t\tCurrent\t\tNew Value\tChange\n")
-    write(outdata, "spindle_cntr_line_off\t:\t%.3f\t\t%.3f\t\t%.3f\n",spindle_centerline_offset_current, spindle_centerline_offset, (spindle_centerline_offset_current - spindle_centerline_offset))
-    write(outdata, "y_home_offset\t\t\t:\t%.3f\t\t%.3f\t\t%.3f\n",y_home_offset_current, y_home_offset, (y_home_offset_current - y_home_offset))
-    write(outdata, "z_home_offset\t\t\t:\t%.3f\t\t%.3f\t\t%.3f\n", z_home_offset_current, z_home_offset, (z_home_offset_current - z_home_offset))
-    write(outdata, "c_home_offset\t\t\t:\t%.3f\t\t%.3f\t\t%.3f\t(deg)\n", c_home_offset_current, c_home_offset, (c_home_offset_current - c_home_offset))
+    write(outdata, "\t\t\t\t\t\tCurrent\t\tNew Value\t  Change\n")
+    write(outdata, "spindle_cntr_line_off\t:\t%8.3f\t%8.3f\t%8.3f\n",spindle_centerline_offset_current, spindle_centerline_offset, (spindle_centerline_offset_current - spindle_centerline_offset))
+    write(outdata, "y_home_offset\t\t\t:\t%8.3f\t%8.3f\t%8.3f\n",y_home_offset_current, y_home_offset, (y_home_offset_current - y_home_offset))
+    write(outdata, "z_home_offset\t\t\t:\t%8.3f\t%8.3f\t%8.3f\n", z_home_offset_current, z_home_offset, (z_home_offset_current - z_home_offset))
+    write(outdata, "c_home_offset\t\t\t:\t%8.3f\t%8.3f\t%8.3f (deg)\n", c_home_offset_current, c_home_offset, (c_home_offset_current - c_home_offset))
+	write(outdata, "spindle_ref_posn\t\t\t:\t%8.3f\t%8.3f\t%8.3f\n", spindle_ref_posn_current, spindle_ref_posn, (spindle_ref_posn_current - spindle_ref_posn))
     close (outdata)
 
 subend	{ init_local_var }
@@ -91,25 +97,25 @@ subend { wait_for_ack }
 *************************}
 calls "init_local_var"
 
-
-    
 calls "reset_ack_latch"
 wclose
 write("Review the changes below: \n")
-write("\t\t\t\tCurrent\t\tNew Value\tChange\n")
-write("spindle_cntr_line_off\t:\t%.3f\t\t%.3f\t\t%.3f\n",spindle_centerline_offset_current, spindle_centerline_offset, (spindle_centerline_offset_current - spindle_centerline_offset))
-write("y_home_offset\t\t:\t%.3f\t\t%.3f\t\t%.3f\n",y_home_offset_current, y_home_offset, (y_home_offset_current - y_home_offset))
-write("z_home_offset\t\t:\t%.3f\t\t%.3f\t\t%.3f\n", z_home_offset_current, z_home_offset, (z_home_offset_current - z_home_offset))
-write("c_home_offset\t\t:\t%.3f\t\t%.3f\t\t%.3f\t(deg)\n", c_home_offset_current, c_home_offset, (c_home_offset_current - c_home_offset))
+write("\t\t\t\tCurrent\t\tNew Value\t  Change\n")
+write("spindle_cntr_line_off\t:\t%8.3f\t%8.3f\t%8.3f\n",spindle_centerline_offset_current, spindle_centerline_offset, (spindle_centerline_offset_current - spindle_centerline_offset))
+write("y_home_offset\t\t:\t%8.3f\t%8.3f\t%8.3f\n",y_home_offset_current, y_home_offset, (y_home_offset_current - y_home_offset))
+write("z_home_offset\t\t:\t%8.3f\t%8.3f\t%8.3f\n", z_home_offset_current, z_home_offset, (z_home_offset_current - z_home_offset))
+write("c_home_offset\t\t:\t%8.3f\t%8.3f\t%8.3f (deg)\n", c_home_offset_current, c_home_offset, (c_home_offset_current - c_home_offset))
+write("spindle_ref_posn\t:\t%8.3f\t%8.3f\t%8.3f\n", spindle_ref_posn_current, spindle_ref_posn, (spindle_ref_posn_current - spindle_ref_posn))
 write("\n\nPress <ACK> to save the new offset data")
 calls "wait_for_ack"
 wclose
 
 {save the data to p_user}
-dba_put_float_parm(DBA_USER, "spindle_cntr_line_off", spindle_centerline_offset / unitcv(1.0))
-dba_put_float_parm(DBA_USER, "2.home_position", y_home_offset / unitcv(1.0))
-dba_put_float_parm(DBA_USER, "3.home_position", z_home_offset / unitcv(1.0))
-dba_put_float_parm(DBA_USER, "5.home_position", c_home_offset / unitcv(1.0))
+dba_put_float_parm(DBA_OEM, "spindle_cntr_line_off", spindle_centerline_offset / unitcv(1.0))
+dba_put_float_parm(DBA_OEM, "2.home_position", y_home_offset / unitcv(1.0))
+dba_put_float_parm(DBA_OEM, "3.home_position", z_home_offset / unitcv(1.0))
+dba_put_float_parm(DBA_OEM, "5.home_position", c_home_offset / unitcv(1.0))
+dba_put_float_parm(DBA_OEM, "spindle_ref_posn", spindle_ref_posn / unitcv(1.0))
 
 return
 
